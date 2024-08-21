@@ -1,0 +1,71 @@
+﻿@page "/add"
+@inject NavigationManager Navigation
+@inject IConfiguration Config
+@rendermode InteractiveServer
+
+<PageTitle>Add Student</PageTitle>
+
+<h1 class="display-4 p-5 text-center">Add Student</h1>
+
+<EditForm class="form border border-1 bg-light p-5 mb-5" Model="NewContact" FormName="ContactForm"
+    OnValidSubmit="CreateContactAsync" Enhance>
+
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group mb-3">
+        <label class="form-label" for="firstName">First Name</label>
+        <InputText @bind-Value="NewContact.FirstName" class="form-control" id="firstName" name="firstName" />
+        <ValidationMessage For="() => NewContact.FirstName" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="form-label" for="lastName">Last Name</label>
+        <InputText @bind-Value="NewContact.LastName" class="form-control" id="lastName" name="lastName" />
+        <ValidationMessage For="() => NewContact.LastName" />
+    </div>
+
+    <div class="mb-3">
+        <label for="exampleDropdownFormSelect1" class="form-label">Student Type</label>
+        <InputSelect class="form-control" id="exampleDropdownFormSelect1" @bind-Value="NewContact.Type">
+            <option value="" disabled selected>Select Student Type</option>
+            <option value="Full Time">Full Time</option>
+            <option value="Part Time">Part Time</option>
+            <option value="Coop">Coop</option>
+        </InputSelect>
+        <ValidationMessage For="() => NewContact.Type" />
+    </div>
+
+    <button class="btn btn-primary" type="submit" style="margin-bottom: 1.5rem;">Add Student</button>
+    <a href="/" class="btn btn-secondary" style="margin-bottom: 1.5rem;">Cancel</a>
+</EditForm>
+
+@code {
+    private string? connectionString;
+
+    [SupplyParameterFromForm]
+    private Contact NewContact { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        connectionString = Config.GetConnectionString("default");
+    }
+
+    private async Task CreateContactAsync()
+    {
+        using (var conn = new MySqlConnection(connectionString))
+        {
+            var sql = "INSERT INTO student (Id, FirstName, LastName, Type) VALUE (@Id, @FirstName, @LastName, @Type)";
+            await conn.ExecuteAsync(sql, new
+            {
+                Id = new Random().Next(100000, 900000),
+                FirstName = NewContact.FirstName,
+                LastName = NewContact.LastName,
+                Type = NewContact.Type
+            });
+        }
+
+        NewContact = new Contact();
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,173 @@
+﻿@page "/register/{ID:int}"
+
+@inject NavigationManager Navigator
+@rendermode InteractiveServer
+@inject IConfiguration Config
+
+<PageTitle>Register Student</PageTitle>
+
+<h1 class="display-4 p-5 text-center">Register Student</h1>
+
+@if (contact != null)
+{
+    <h1>@contact.FirstName @contact.LastName - @contact.Id</h1>
+
+    <EditForm Model="contact" OnValidSubmit="RegisteredCourses" class="form border border-1 bg-light p-5 mb-5">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <CustomValidation @ref="customValidation" />
+
+        <p>The following courses are currently available for registration</p>
+
+        @if (success)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        @if (courses != null && courses.Count > 0)
+        {
+            @foreach (var course in courses)
+            {
+                <div class="form-group mb-3">
+                    <input class="form-check-input" type="checkbox" id="@course.Code" @bind="course.isEnrolled" value="@course.Code">
+                    <label class="form-check-label" for="@course.Code">@course.Code - @course.Title</label>
+                </div>
+            }
+        }
+        else
+        {
+            <p>No courses available</p>
+        }
+
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 1.5rem;">Register Student</button>
+        <a href="/" class="btn btn-secondary" style="margin-bottom: 1.5rem;">Cancel</a>
+    </EditForm>
+}
+else
+{
+    <p>Loading</p>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private string? connectionString;
+    private List<Course> courses = new List<Course>();
+    private Contact? contact;
+
+    private bool success = false;
+    private string successMessage = "";
+
+    private CustomValidation? customValidation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        connectionString = Config.GetConnectionString("default");
+        contact = await GetContactAsync(Id);
+        courses = await GetCoursesAsync();
+        await MarkRegisteredCoursesAsync();
+        Console.WriteLine($"Number of courses: {courses.Count}");
+    }
+
+    private async Task<List<Course>> GetCoursesAsync()
+    {
+        using (var conn = new MySqlConnection(connectionString))
+        {
+            var sql = "SELECT * FROM course";
+            var rows = await conn.QueryAsync<Course>(sql);
+            Console.WriteLine($"Fetched {rows.Count()} courses.");
+            return rows.ToList();
+        }
+    }
+
+    private async Task<Contact?> GetContactAsync(int id)
+    {
+        using var conn = new MySqlConnection(connectionString);
+        var sql = "SELECT * FROM student WHERE Id = @Id";
+        return await conn.QueryFirstOrDefaultAsync<Contact>(sql, new { Id = id });
+    }
+
+    private async Task<List<int>> GetRegisteredCoursesAsync()
+    {
+        using var conn = new MySqlConnection(connectionString);
+        var sql = "SELECT CourseId FROM registration WHERE StudentId = @StudentId";
+        var rows = await conn.QueryAsync<int>(sql, new { StudentId = Id });
+        return rows.ToList();
+    }
+
+    private async Task MarkRegisteredCoursesAsync()
+    {
+        var registeredCourses = await GetRegisteredCoursesAsync();
+        foreach (var course in courses)
+        {
+            if (registeredCourses.Contains(course.Id))
+            {
+                course.isEnrolled = true;
+            }
+        }
+    }
+
+    private async Task RegisteredCourses()
+    {
+        
+        if (!ValidateStudentRegistration(out var validationErrors))
+        {
+            customValidation?.DisplayErrors(validationErrors);
+            return;
+        }
+
+        using var conn = new MySqlConnection(connectionString);
+        var registeredCourses = await GetRegisteredCoursesAsync();
+
+        var selectedCourses = courses.Where(c => c.isEnrolled).ToList();
+
+        
+        int totalHours = selectedCourses.Sum(c => c.WeeklyHours);
+
+        
+        var newRegistrations = selectedCourses.Select(c => c.Id).Except(registeredCourses);
+        var removedRegistrations = registeredCourses.Except(selectedCourses.Select(c => c.Id));
+
+        
+        var insertSql = "INSERT INTO registration (StudentId, CourseId) VALUES (@StudentId, @CourseId)";
+        foreach (var courseId in newRegistrations)
+        {
+            await conn.ExecuteAsync(insertSql, new { StudentId = Id, CourseId = courseId });
+        }
+
+        var deleteSql = "DELETE FROM registration WHERE StudentId = @StudentId AND CourseId = @CourseId";
+        foreach (var courseId in removedRegistrations)
+        {
+            await conn.ExecuteAsync(deleteSql, new { StudentId = Id, CourseId = courseId });
+        }
+
+        success = true;
+        successMessage = $"You are registered for {selectedCourses.Count} course(s): {string.Join(", ", selectedCourses.Select(c => c.Code))} with a total of {totalHours} weekly hours!";
+    }
+
+    private bool ValidateStudentRegistration(out Dictionary<string, List<string>> validationErrors)
+    {
+        validationErrors = new Dictionary<string, List<string>>();
+
+       
+        var selectedCourses = courses.Where(c => c.isEnrolled).ToList();
+        int totalHours = selectedCourses.Sum(c => c.WeeklyHours);
+
+        if (contact.Type == "Full Time" && totalHours > 16)
+        {
+            validationErrors.Add(nameof(contact.Type), new List<string> { "Full-time students can register for a maximum of 16 weekly hours." });
+        }
+        else if (contact.Type == "Part Time" && selectedCourses.Count > 3)
+        {
+            validationErrors.Add(nameof(contact.Type), new List<string> { "Part-time students can register for a maximum of 3 courses." });
+        }
+        else if (contact.Type == "Coop" && (totalHours > 4 || selectedCourses.Count > 2))
+        {
+            validationErrors.Add(nameof(contact.Type), new List<string> { "Coop students can register for a maximum of 4 weekly hours and 2 courses." });
+        }
+
+        return !validationErrors.Any();
+    }
+}

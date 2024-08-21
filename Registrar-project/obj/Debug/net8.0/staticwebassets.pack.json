@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\lebed\\Documents\\SPRING 2024\\Programming 2\\Registrar-lebi0004\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Registrar.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Registrar.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\lebed\\Documents\\SPRING 2024\\Programming 2\\Registrar-lebi0004\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\lebed\\Documents\\SPRING 2024\\Programming 2\\Registrar-lebi0004\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\lebed\\Documents\\SPRING 2024\\Programming 2\\Registrar-lebi0004\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\lebed\\Documents\\SPRING 2024\\Programming 2\\Registrar-lebi0004\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Registrar.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Registrar.props",
+      "PackagePath": "build\\Registrar.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Registrar.props",
+      "PackagePath": "buildMultiTargeting\\Registrar.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Registrar.props",
+      "PackagePath": "buildTransitive\\Registrar.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
